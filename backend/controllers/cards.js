@@ -35,9 +35,18 @@ const createCard = (req, res) => {
 };
 
 const deleteCard = (req, res) => {
-  Card.findByIdAndDelete(req.params.cardId)
+  Card.findById(req.params.cardId)
     .orFail()
-    .then((card) => res.send(card))
+    .then((card) => {
+      if (card.owner.toString() !== req.user._id) {
+        return res.status(403).send({
+          message: 'No tienes permiso para eliminar esta tarjeta',
+        });
+      }
+
+      return Card.findByIdAndDelete(req.params.cardId)
+        .then((deletedCard) => res.send(deletedCard));
+    })
     .catch((err) => {
       if (err.name === 'DocumentNotFoundError') {
         return res.status(404).send({

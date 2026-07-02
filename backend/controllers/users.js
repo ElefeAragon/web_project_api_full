@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
-const { JWT_SECRET = 'dev-secret-key' } = process.env;
+const { JWT_SECRET = "dev-secret-key" } = process.env;
 
 const getUsers = (req, res) => {
   User.find({})
@@ -134,10 +134,12 @@ const updateAvatar = (req, res) => {
       });
     });
 };
+
 const login = (req, res) => {
   const { email, password } = req.body;
 
   User.findOne({ email })
+    .select("+password")
     .then((user) => {
       if (!user) {
         return Promise.reject(new Error("Correo o contraseña incorrectos"));
@@ -160,6 +162,29 @@ const login = (req, res) => {
     });
 };
 
+const getCurrentUser = (req, res) => {
+  User.findById(req.user._id)
+    .orFail()
+    .then((user) => res.send(user))
+    .catch((err) => {
+      if (err.name === "DocumentNotFoundError") {
+        return res.status(404).send({
+          message: "Usuario no encontrado",
+        });
+      }
+
+      if (err.name === "CastError") {
+        return res.status(400).send({
+          message: "ID de usuario inválido",
+        });
+      }
+
+      return res.status(500).send({
+        message: "Error interno del servidor",
+      });
+    });
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -167,4 +192,5 @@ module.exports = {
   updateProfile,
   updateAvatar,
   login,
+  getCurrentUser,
 };
