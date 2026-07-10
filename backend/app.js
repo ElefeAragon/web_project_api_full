@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 
 const { login, createUser } = require('./controllers/users');
 const auth = require('./middleware/auth');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = 3000;
@@ -27,6 +28,8 @@ app.use((req, res) => {
     message: 'Recurso solicitado no encontrado',
   });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`App listening at port ${PORT}`);

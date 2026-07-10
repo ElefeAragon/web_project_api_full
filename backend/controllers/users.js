@@ -1,43 +1,34 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const {
+  NotFoundError,
+  BadRequestError,
+  UnauthorizedError,
+  ConflictError,
+} = require("../utils/errors");
 
 const { JWT_SECRET = "dev-secret-key" } = process.env;
 
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send(users))
-    .catch(() => {
-      res.status(500).send({
-        message: "Error interno del servidor",
-      });
-    });
+    .catch(next);
 };
 
-const getUserById = (req, res) => {
+const getUserById = (req, res, next) => {
   User.findById(req.params.userId)
-    .orFail()
+    .orFail(() => new NotFoundError("Usuario no encontrado"))
     .then((user) => res.send(user))
     .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res.status(404).send({
-          message: "Usuario no encontrado",
-        });
-      }
-
       if (err.name === "CastError") {
-        return res.status(400).send({
-          message: "ID de usuario inválido",
-        });
+        return next(new BadRequestError("ID de usuario inválido"));
       }
-
-      return res.status(500).send({
-        message: "Error interno del servidor",
-      });
+      return next(err);
     });
 };
 
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const { name, about, avatar, email, password } = req.body;
 
   bcrypt
@@ -54,24 +45,16 @@ const createUser = (req, res) => {
     .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return res.status(400).send({
-          message: "Datos inválidos",
-        });
+        return next(new BadRequestError("Datos inválidos"));
       }
-
       if (err.code === 11000) {
-        return res.status(409).send({
-          message: "Este correo electrónico ya está registrado",
-        });
+        return next(new ConflictError("Este correo electrónico ya está registrado"));
       }
-
-      return res.status(500).send({
-        message: "Error interno del servidor",
-      });
+      return next(err);
     });
 };
 
-const updateProfile = (req, res) => {
+const updateProfile = (req, res, next) => {
   const { name, about } = req.body;
 
   User.findByIdAndUpdate(
@@ -82,28 +65,17 @@ const updateProfile = (req, res) => {
       runValidators: true,
     },
   )
-    .orFail()
+    .orFail(() => new NotFoundError("Usuario no encontrado"))
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === "ValidationError" || err.name === "CastError") {
-        return res.status(400).send({
-          message: "Datos inválidos",
-        });
+        return next(new BadRequestError("Datos inválidos"));
       }
-
-      if (err.name === "DocumentNotFoundError") {
-        return res.status(404).send({
-          message: "Usuario no encontrado",
-        });
-      }
-
-      return res.status(500).send({
-        message: "Error interno del servidor",
-      });
+      return next(err);
     });
 };
 
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(
@@ -114,40 +86,29 @@ const updateAvatar = (req, res) => {
       runValidators: true,
     },
   )
-    .orFail()
+    .orFail(() => new NotFoundError("Usuario no encontrado"))
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === "ValidationError" || err.name === "CastError") {
-        return res.status(400).send({
-          message: "Datos inválidos",
-        });
+        return next(new BadRequestError("Datos inválidos"));
       }
-
-      if (err.name === "DocumentNotFoundError") {
-        return res.status(404).send({
-          message: "Usuario no encontrado",
-        });
-      }
-
-      return res.status(500).send({
-        message: "Error interno del servidor",
-      });
+      return next(err);
     });
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
 
   User.findOne({ email })
     .select("+password")
     .then((user) => {
       if (!user) {
-        return Promise.reject(new Error("Correo o contraseña incorrectos"));
+        return Promise.reject(new UnauthorizedError("Correo o contraseña incorrectos"));
       }
 
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
-          return Promise.reject(new Error("Correo o contraseña incorrectos"));
+          return Promise.reject(new UnauthorizedError("Correo o contraseña incorrectos"));
         }
 
         const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
@@ -157,31 +118,18 @@ const login = (req, res) => {
         return res.send({ token });
       });
     })
-    .catch(() => {
-      res.status(401).send({ message: "Correo o contraseña incorrectos" });
-    });
+    .catch(next);
 };
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   User.findById(req.user._id)
-    .orFail()
+    .orFail(() => new NotFoundError("Usuario no encontrado"))
     .then((user) => res.send(user))
     .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res.status(404).send({
-          message: "Usuario no encontrado",
-        });
-      }
-
       if (err.name === "CastError") {
-        return res.status(400).send({
-          message: "ID de usuario inválido",
-        });
+        return next(new BadRequestError("ID de usuario inválido"));
       }
-
-      return res.status(500).send({
-        message: "Error interno del servidor",
-      });
+      return next(err);
     });
 };
 
