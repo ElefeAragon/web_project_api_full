@@ -1,7 +1,9 @@
 const express = require('express');
+
 const mongoose = require('mongoose');
 const { celebrate, Joi, errors } = require('celebrate');
 const validator = require('validator');
+const cors = require('cors');
 
 const { login, createUser } = require('./controllers/users');
 const auth = require('./middleware/auth');
@@ -10,6 +12,8 @@ const { requestLogger, errorLogger } = require('./middleware/logger');
 
 const app = express();
 const PORT = 3000;
+
+app.use(cors());
 
 mongoose.connect('mongodb://localhost:27017/aroundb');
 
@@ -39,6 +43,12 @@ const validateSignin = celebrate({
     email: Joi.string().required().email(),
     password: Joi.string().required(),
   }),
+});
+
+app.get('/crash-test', () => {
+  setTimeout(() => {
+    throw new Error('El servidor va a caer');
+  }, 0);
 });
 
 app.post('/signin', validateSignin, login);

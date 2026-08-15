@@ -82,7 +82,7 @@ class Api {
 }
 
 const api = new Api({
-  baseUrl: "https://around-api.es.tripleten-services.com/v1",
+  baseUrl: "https://apiwebprojectfelipe.chickenkiller.com",
 });
 
 export default api;

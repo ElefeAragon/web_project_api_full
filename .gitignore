@@ -9,6 +9,7 @@ frontend/.env
 
 # Build del frontend
 frontend/dist/
+frontend/dist.zip
 
 # Logs
 backend/logs/
