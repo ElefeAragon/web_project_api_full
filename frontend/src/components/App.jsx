@@ -34,8 +34,8 @@ function App() {
       .checkToken(token)
       .then((data) => {
         setLoggedIn(true);
-        setEmail(data.data.email);
-        setCurrentUser(data.data);
+        setEmail(data.email);
+        setCurrentUser(data);
       })
       .catch((err) => {
         console.error(err);
