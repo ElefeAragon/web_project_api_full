@@ -1,6 +1,6 @@
 export default function Popup({ onClose, title, children }) {
   return (
-    <div className="popup">
+    <div className="popup popup_opened">
       <div
         className={`popup__content ${
           !title ? "popup__content_content_image" : ""

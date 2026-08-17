@@ -1,10 +1,14 @@
-export default function Card(props) {
-  const { name, link, isLiked } = props.card;
-  const { handleOpenPopup } = props;
+import ImagePopup from "../ImagePopup/ImagePopup";
+
+export default function Card({ card, currentUser, handleOpenPopup, onCardLike, onCardDelete }) {
+  const { name, link, likes, owner } = card;
+
+  const isOwn = owner === currentUser?._id;
+  const isLiked = likes?.some((id) => id === currentUser?._id);
 
   const imagePopup = {
-    title: null, // 👈 IMPORTANTE (sin título)
-    children: <img src={link} alt={name} className="popup__image" />,
+    title: null,
+    children: <ImagePopup card={card} />,
   };
 
   return (
@@ -16,11 +20,14 @@ export default function Card(props) {
         onClick={() => handleOpenPopup(imagePopup)}
       />
 
-      <button
-        aria-label="Delete card"
-        className="card__delete-button"
-        type="button"
-      />
+      {isOwn && (
+        <button
+          aria-label="Delete card"
+          className="card__delete-button"
+          type="button"
+          onClick={() => onCardDelete(card)}
+        />
+      )}
 
       <div className="card__description">
         <h2 className="card__title">{name}</h2>
@@ -31,6 +38,7 @@ export default function Card(props) {
           className={`card__like-button ${
             isLiked ? "card__like-button_active" : ""
           }`}
+          onClick={() => onCardLike(card)}
         />
       </div>
     </li>

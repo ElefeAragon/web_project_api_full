@@ -1,10 +1,30 @@
-export default function EditProfile() {
+import { useState, useEffect } from "react";
+
+export default function EditProfile({ currentUser, onUpdateUser }) {
+  const [name, setName] = useState("");
+  const [about, setAbout] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setName(currentUser?.name || "");
+    setAbout(currentUser?.about || "");
+  }, [currentUser]);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setIsLoading(true);
+    onUpdateUser({ name, about })
+      .catch((err) => console.error(err))
+      .finally(() => setIsLoading(false));
+  }
+
   return (
     <form
       className="popup__form"
       name="edit-profile-form"
       id="edit-profile-form"
       noValidate
+      onSubmit={handleSubmit}
     >
       <label className="popup__field">
         <input
@@ -16,6 +36,8 @@ export default function EditProfile() {
           minLength="2"
           maxLength="40"
           required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
         />
         <span className="popup__error" id="profile-name-error"></span>
       </label>
@@ -30,12 +52,14 @@ export default function EditProfile() {
           minLength="2"
           maxLength="200"
           required
+          value={about}
+          onChange={(e) => setAbout(e.target.value)}
         />
         <span className="popup__error" id="profile-about-error"></span>
       </label>
 
-      <button className="button popup__button" type="submit">
-        Guardar
+      <button className="button popup__button" type="submit" disabled={isLoading}>
+        {isLoading ? "Guardando..." : "Guardar"}
       </button>
     </form>
   );

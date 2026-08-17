@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Popup from "./components/Popup/Popup";
 import NewCard from "./components/NewCard/NewCard";
@@ -7,44 +7,22 @@ import EditAvatar from "./components/EditAvatar/EditAvatar";
 import Card from "./components/Card/Card";
 
 import { useCurrentUser } from "../../contexts/CurrentUserContext";
-
-const cards = [
-  {
-    isLiked: false,
-    _id: "1",
-    name: "Yosemite Valley",
-    link: "https://practicum-content.s3.us-west-1.amazonaws.com/web-code/moved_yosemite.jpg",
-  },
-  {
-    isLiked: false,
-    _id: "2",
-    name: "Lake Louise",
-    link: "https://practicum-content.s3.us-west-1.amazonaws.com/web-code/moved_lake-louise.jpg",
-  },
-];
+import api from "../../utils/api";
 
 export default function Main() {
   const [popup, setPopup] = useState(null);
+  const [cards, setCards] = useState([]);
 
-  const { currentUser } = useCurrentUser();
+  const { currentUser, setCurrentUser } = useCurrentUser();
 
-  // POPUPS
-  const newCardPopup = {
-    title: "Nuevo lugar",
-    children: <NewCard />,
-  };
+  useEffect(() => {
+    api
+      .getInitialCards()
+      .then((data) => setCards(data))
+      .catch((err) => console.error(err));
+  }, []);
 
-  const editProfilePopup = {
-    title: "Editar perfil",
-    children: <EditProfile />,
-  };
-
-  const editAvatarPopup = {
-    title: "Cambiar foto de perfil",
-    children: <EditAvatar />,
-  };
-
-  // HANDLERS
+  // POPUP
   function handleOpenPopup(popupData) {
     setPopup(popupData);
   }
@@ -52,6 +30,69 @@ export default function Main() {
   function handleClosePopup() {
     setPopup(null);
   }
+
+  // USER
+  function handleUpdateUser(data) {
+    return api.editUserInfo(data).then((updatedUser) => {
+      setCurrentUser(updatedUser);
+      handleClosePopup();
+    });
+  }
+
+  function handleUpdateAvatar(data) {
+    return api.setUserAvatar(data).then((updatedUser) => {
+      setCurrentUser(updatedUser);
+      handleClosePopup();
+    });
+  }
+
+  // CARDS
+  function handleAddCardSubmit(data) {
+    return api.addCard(data).then((newCard) => {
+      setCards([newCard, ...cards]);
+      handleClosePopup();
+    });
+  }
+
+  function handleCardLike(card) {
+    const isLiked = card.likes?.some((id) => id === currentUser?._id);
+
+    api
+      .changeLikeCardStatus(card._id, !isLiked)
+      .then((updatedCard) => {
+        setCards((state) =>
+          state.map((c) => (c._id === card._id ? updatedCard : c))
+        );
+      })
+      .catch((err) => console.error(err));
+  }
+
+  function handleCardDelete(card) {
+    api
+      .deleteCard(card._id)
+      .then(() => {
+        setCards((state) => state.filter((c) => c._id !== card._id));
+      })
+      .catch((err) => console.error(err));
+  }
+
+  // POPUPS
+  const newCardPopup = {
+    title: "Nuevo lugar",
+    children: <NewCard onAddCard={handleAddCardSubmit} />,
+  };
+
+  const editProfilePopup = {
+    title: "Editar perfil",
+    children: (
+      <EditProfile currentUser={currentUser} onUpdateUser={handleUpdateUser} />
+    ),
+  };
+
+  const editAvatarPopup = {
+    title: "Cambiar foto de perfil",
+    children: <EditAvatar onUpdateAvatar={handleUpdateAvatar} />,
+  };
 
   return (
     <main className="content">
@@ -107,7 +148,10 @@ export default function Main() {
             <Card
               key={card._id}
               card={card}
+              currentUser={currentUser}
               handleOpenPopup={handleOpenPopup}
+              onCardLike={handleCardLike}
+              onCardDelete={handleCardDelete}
             />
           ))}
         </ul>
