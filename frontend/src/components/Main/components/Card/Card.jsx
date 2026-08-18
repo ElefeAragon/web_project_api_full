@@ -1,6 +1,12 @@
-import ImagePopup from "../ImagePopup/ImagePopup";
+import ImagePopup from "../ImagePopop/ImagePopup";
 
-export default function Card({ card, currentUser, handleOpenPopup, onCardLike, onCardDelete }) {
+export default function Card({
+  card,
+  currentUser,
+  handleOpenPopup,
+  onCardLike,
+  onCardDelete,
+}) {
   const { name, link, likes, owner } = card;
 
   const isOwn = owner === currentUser?._id;
@@ -36,7 +42,7 @@ export default function Card({ card, currentUser, handleOpenPopup, onCardLike, o
           aria-label="Like card"
           type="button"
           className={`card__like-button ${
-            isLiked ? "card__like-button_active" : ""
+            isLiked ? "card__like-button_is-active" : ""
           }`}
           onClick={() => onCardLike(card)}
         />

@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 export default function EditProfile({ currentUser, onUpdateUser }) {
   const [name, setName] = useState("");
   const [about, setAbout] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [aboutError, setAboutError] = useState("");
+  const [isValid, setIsValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -10,8 +13,26 @@ export default function EditProfile({ currentUser, onUpdateUser }) {
     setAbout(currentUser?.about || "");
   }, [currentUser]);
 
+  function checkFormValidity(nameInput, aboutInput) {
+    setIsValid(nameInput.validity.valid && aboutInput.validity.valid);
+  }
+
+  function handleNameChange(e) {
+    setName(e.target.value);
+    setNameError(e.target.validationMessage);
+    checkFormValidity(e.target, document.getElementById("profile-about"));
+  }
+
+  function handleAboutChange(e) {
+    setAbout(e.target.value);
+    setAboutError(e.target.validationMessage);
+    checkFormValidity(document.getElementById("profile-name"), e.target);
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
+    if (!isValid) return;
+
     setIsLoading(true);
     onUpdateUser({ name, about })
       .catch((err) => console.error(err))
@@ -37,9 +58,9 @@ export default function EditProfile({ currentUser, onUpdateUser }) {
           maxLength="40"
           required
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={handleNameChange}
         />
-        <span className="popup__error" id="profile-name-error"></span>
+        <span className="popup__error" id="profile-name-error">{nameError}</span>
       </label>
 
       <label className="popup__field">
@@ -53,12 +74,16 @@ export default function EditProfile({ currentUser, onUpdateUser }) {
           maxLength="200"
           required
           value={about}
-          onChange={(e) => setAbout(e.target.value)}
+          onChange={handleAboutChange}
         />
-        <span className="popup__error" id="profile-about-error"></span>
+        <span className="popup__error" id="profile-about-error">{aboutError}</span>
       </label>
 
-      <button className="button popup__button" type="submit" disabled={isLoading}>
+      <button
+        className="button popup__button"
+        type="submit"
+        disabled={!isValid || isLoading}
+      >
         {isLoading ? "Guardando..." : "Guardar"}
       </button>
     </form>

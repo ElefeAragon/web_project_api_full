@@ -3,10 +3,31 @@ import { useState } from "react";
 export default function NewCard({ onAddCard }) {
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const [isValid, setIsValid] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  function checkFormValidity(nameInput, linkInput) {
+    setIsValid(nameInput.validity.valid && linkInput.validity.valid);
+  }
+
+  function handleNameChange(e) {
+    setName(e.target.value);
+    setNameError(e.target.validationMessage);
+    checkFormValidity(e.target, document.getElementById("card-link"));
+  }
+
+  function handleLinkChange(e) {
+    setLink(e.target.value);
+    setLinkError(e.target.validationMessage);
+    checkFormValidity(document.getElementById("card-name"), e.target);
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
+    if (!isValid) return;
+
     setIsLoading(true);
     onAddCard({ name, link })
       .catch((err) => console.error(err))
@@ -32,9 +53,9 @@ export default function NewCard({ onAddCard }) {
           required
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={handleNameChange}
         />
-        <span className="popup__error" id="card-name-error"></span>
+        <span className="popup__error" id="card-name-error">{nameError}</span>
       </label>
 
       <label className="popup__field">
@@ -46,12 +67,16 @@ export default function NewCard({ onAddCard }) {
           required
           type="url"
           value={link}
-          onChange={(e) => setLink(e.target.value)}
+          onChange={handleLinkChange}
         />
-        <span className="popup__error" id="card-link-error"></span>
+        <span className="popup__error" id="card-link-error">{linkError}</span>
       </label>
 
-      <button className="button popup__button" type="submit" disabled={isLoading}>
+      <button
+        className="button popup__button"
+        type="submit"
+        disabled={!isValid || isLoading}
+      >
         {isLoading ? "Guardando..." : "Guardar"}
       </button>
     </form>
